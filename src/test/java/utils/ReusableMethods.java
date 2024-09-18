@@ -58,13 +58,4 @@ public class ReusableMethods {
             System.out.println("Bekleme sırasında bir hata oluştu: " + e.getMessage());
         }
     }
-    public void clickElement(WebElement element){
-        // Click the found product
-        if (element != null) {
-            element.click();
-        } else {
-            System.out.println("No product found with the description: " + element);
-        }
-    }
-
 }

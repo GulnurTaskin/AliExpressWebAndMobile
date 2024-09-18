@@ -14,12 +14,13 @@ import pages.base.BasePage;
 public class HomePageWeb extends BasePage {
     private By searchInput = By.id("search-key");
     private By accountButton = By.className("user-account-info");
+
     public HomePageWeb(WebDriver driver) {
         super(driver);
         PageFactory.initElements(driver, this);
     }
 
-    @FindBy(id="search-words")
+    @FindBy(id = "search-words")
     public WebElement searchBox;
 
     // "Plus" butonunun locator'ı
@@ -32,9 +33,10 @@ public class HomePageWeb extends BasePage {
     // kategoriler icin dinamik locate alma methodu
     public WebElement getCategoryElement(String categoryName) {
         WebDriver driver = DriverManager.getWebDriver();
-        String dynamicXpath = "//a[text()='" + categoryName + "']";
+        String dynamicXpath = "//div[text()='" + categoryName + "']";
         return driver.findElement(By.xpath(dynamicXpath));
     }
+
 
     // secilen kategorinin acilan sayfadaki sayfa basligi
     @FindBy(xpath = "//*[@class='component--lv3CategoryTitle--3NEC_gC']")
@@ -46,4 +48,9 @@ public class HomePageWeb extends BasePage {
     @FindBy(xpath = "//*[text()='Enregistrer']")
     public WebElement enregistrer;
 
+    @FindBy(xpath = "//div[text()='Ne pas autoriser']")
+    public WebElement popupRefuse;
+
+    @FindBy(xpath = "//button[text()='Accepter les cookies']")
+    public WebElement cookiesAccept;
 }

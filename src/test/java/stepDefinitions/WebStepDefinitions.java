@@ -14,31 +14,53 @@ import io.cucumber.java.en.When;
 import utils.ReusableMethods;
 
 public class WebStepDefinitions {
-    WebDriver driver = DriverManager.getWebDriver();
+    private WebDriver driver = DriverManager.getWebDriver();
     private ReusableMethods reusableMethods = new ReusableMethods(driver); // ReusableMethods nesnesini oluştur
-    public HomePageWeb homePage;
+    private HomePageWeb homePage;
     private LoginPageWeb loginPage;
 
-    // Anasayfada olduğumuzu doğruluyoruz
-    @Given("Je suis sur la page d'acceuil d'AliExpress")
-    public void je_suis_sur_la_page_d_accueil_d_ali_express() {
-        // WebDriver instance'ını alıyoruz
+    @Given("Je suis sur la plateforme AliExpress")
+    public void je_suis_sur_la_plateforme_ali_express() throws InterruptedException {
         WebDriver driver = DriverManager.getWebDriver();
 
-        // 1. "Plus" butonunun varligini kontrol et
-        try {
-            // "Plus" butonunu buluyoruz
-            WebElement plusButton = driver.findElement(HomePageWeb.plusButton);
+        // Başlangıçta homePage'in null olmadığından emin ol
+        if (homePage == null) {
+            homePage = new HomePageWeb(driver); // HomePage'i başlat
+        }
 
-            // Eğer buton görünürse, test başarılı olur
+        // Bekleme işlemi
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        // Ana sayfa yüklendiğini kontrol et
+        try {
+            WebElement plusButton = wait.until(ExpectedConditions.visibilityOfElementLocated(HomePageWeb.plusButton));
             Assert.assertTrue("Ana sayfa doğrulanamadı, 'Plus' butonu görünmüyor!", plusButton.isDisplayed());
             System.out.println("Ana sayfa başarıyla yüklendi.");
-        } catch (NoSuchElementException e) {
-            // Eğer buton bulunamazsa, test başarısız olur
-            Assert.fail("'Plus' butonu bulunamadı, ana sayfa yüklü değil.");
+        } catch (NoSuchElementException | TimeoutException e) {
+            Assert.fail("Ana sayfa yüklü değil veya 'Plus' butonu bulunamadı.");
+        }
+
+        // Pop-up ve çerez işlemleri
+        try {
+            if (homePage.popupRefuse != null) {
+                WebElement popupRefuse = wait.until(ExpectedConditions.visibilityOf(homePage.popupRefuse));
+                reusableMethods.waitAndClick(popupRefuse);
+                System.out.println("Pop-up başarıyla kapatıldı.");
+            }
+        } catch (TimeoutException e) {
+            System.out.println("Pop-up bulunamadı veya zaten kapalı.");
+        }
+
+        try {
+            if (homePage.cookiesAccept != null) {
+                WebElement cookiesAccept = wait.until(ExpectedConditions.visibilityOf(homePage.cookiesAccept));
+                reusableMethods.waitAndClick(cookiesAccept);
+                System.out.println("Çerezler başarıyla kabul edildi.");
+            }
+        } catch (TimeoutException e) {
+            System.out.println("Çerez kabul butonu bulunamadı veya zaten kabul edilmiş.");
         }
     }
-
 
     @When("Je vérifie que l'URL est correcte")
     public void je_verifie_que_l_url_est_correcte() {
@@ -56,6 +78,27 @@ public class WebStepDefinitions {
         // URL'nin doğru olup olmadığını kontrol et
         Assert.assertTrue("URL doğrulanamadı: Beklenen -> " + expectedDomain + ", Gerçek -> " + actualUrl,
                 actualUrl.contains(expectedDomain));
+    }
+
+    // Anasayfada olduğumuzu doğruluyoruz
+    @Then("Je suis sur la page d'acceuil d'AliExpress")
+    public void je_suis_sur_la_page_d_accueil_d_ali_express() {
+
+        // WebDriver instance'ını alıyoruz
+        WebDriver driver = DriverManager.getWebDriver();
+
+        // 1. "Plus" butonunu kontrol et
+        try {
+            // "Plus" butonunu buluyoruz
+            WebElement plusButton = driver.findElement(HomePageWeb.plusButton);
+
+            // Eğer buton görünürse, test başarılı olur
+            Assert.assertTrue("Ana sayfa doğrulanamadı, 'Plus' butonu görünmüyor!", plusButton.isDisplayed());
+            System.out.println("Ana sayfa başarıyla yüklendi.");
+        } catch (NoSuchElementException e) {
+            // Eğer buton bulunamazsa, test başarısız olur
+            Assert.fail("'Plus' butonu bulunamadı, ana sayfa yüklü değil.");
+        }
     }
 
     // Tüm Kategoriler butonunun üzerine geliriz
@@ -76,15 +119,18 @@ public class WebStepDefinitions {
     // İstediğimiz kategoriye tıklıyoruz
     @When("Je clique sur la categorie {string}")
     public void je_clique_sur_la_categorie(String categoryName) {
-        // homePage'i başlat
         if (homePage == null) {
             homePage = new HomePageWeb(DriverManager.getWebDriver());
         }
 
+        // categoryName parametresi ile ilgili kategori elementini alıyoruz
         WebElement categoryElement = homePage.getCategoryElement(categoryName);
-        categoryElement.click();
+
+        // Kategoriyi bulup, reusableMethods yardımıyla tıklıyoruz
+        reusableMethods.waitAndClick(categoryElement);
         System.out.println("L'utilisateur a cliqué sur la catégorie: " + categoryName);
     }
+
 
     // Seçilen kategori sayfasına yönlendirildiğimizi doğruluyoruz
     @Then("Je devrais être redirigé vers la page de la catégorie {string}")
@@ -132,13 +178,4 @@ public class WebStepDefinitions {
         }
     }
 
-    @Then("Je change la langue du site")
-    public void je_change_la_langue_du_site() throws InterruptedException {
-        WebDriver driver = DriverManager.getWebDriver();
-        homePage = new HomePageWeb(driver);
-        reusableMethods.wait(2);
-        homePage.langueButton.click();
-        homePage.enregistrer.click();
-
-    }
 }
